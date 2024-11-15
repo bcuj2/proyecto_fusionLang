@@ -55,6 +55,19 @@ Definición de la gramática BNF para las expresiones del lenguaje:
      ;BLOQUE GLOBALS
      (globals ("GLOBALS" "{" (arbno var-decl ";") "}") globals-exp)
 
+     ;BLOQUE PROGLAM
+     (globals ("PROGRAM" "{" (arbno  proc-decl ";") "}") program-exp)
+
+     ;Declaración de parámetros para un procedimiento
+     (param-decl (type-exp identifier) param-exp)
+
+     ;Definición de funciones (procedimientos)
+     (proc-decl ("proc" identifier "=" "function" "(" (separated-list param-decl ",") ")" "{" (arbno expression ";") "}") proc-exp)
+
+     ;Expresiones de operación sobre funciones
+     (expression (identifier "(" (separated-list expression ",") ")") func-call-exp)
+     
+
      ;Declaración de variables para el bloque GLOBALS
      (var-decl (type-exp identifier "=" expression) var-exp)                 ;Mutable
      (var-decl ("const" type-exp identifier "=" expression) const-exp)       ;Inmutable
@@ -135,6 +148,8 @@ Definición de la gramática BNF para las expresiones del lenguaje:
      ;Ciclos - for/while
      (expression ("while" "(" expression ")" "{" (arbno expression ";") "}") while-exp)
      (expression ("for" "(" identifier "->" expression ";" expression ";" identifier "->" expression ")" "{" (arbno expression ";") "}") for-exp)
+     ;Estructura de control switch
+     (expression ("switch" "(" expression ")" "{" (arbno "case" expression ":" (arbno expression ";") ";") "default" ":" (arbno expression ";") "}") switch-exp)
 
      ;Secuenciación - BLOCK
      (expression ("BLOCK" "{" (arbno expression ";") "}") block-exp)
@@ -142,11 +157,14 @@ Definición de la gramática BNF para las expresiones del lenguaje:
      ; Definición para la secuencia LOCALS
      (expression ("LOCALS" "{" (arbno var-decl ";") "}" "{" (arbno expression ";") "}") locals-exp)
 
+    
+
      ;Tipos de datos
      (type-exp ("int") int-type-exp)
      (type-exp ("float") float-type-exp)
      (type-exp ("bool") bool-type-exp)
      (type-exp ("string") string-type-exp)
+     (type-exp ("proc") proc-type-exp)
      )) 
 
 
@@ -172,3 +190,6 @@ REVISAR EL DOC DEL PROYECTO POR SI HACEN FALTA MAS COSITAS QUE SE ME PASARON
 ;Definición de la función show-the-datatypes
 (define show-the-datatypes
   (lambda () (sllgen:list-define-datatypes scanner-spec-simple-interpreter grammar-simple-interpreter)))
+
+(define scan&parse
+  (sllgen:make-string-parser scanner-spec-simple-interpreter grammar-simple-interpreter))
