@@ -48,33 +48,24 @@ Enlace al repositorio: https://github.com/bcuj2/proyecto_fusionLang.git
 
      ; Expresión de un número
      (expression (number) number-lit)
-
      ; Expresión de un texto
      (expression ("\"" texto "\"") texto-lit)
-  
      ; BLOQUE GLOBALS
      (globals ("GLOBALS" "{" (arbno var-decl ";") "}") globals-exp)
-
      ; BLOQUE PROGRAM
-     (globals ("PROGRAM" "{" (arbno proc-decl ";") "}") program-exp)
-
+     (program ("PROGRAM" "{" (arbno proc-decl ";") "}") program-exp)
      ; Declaración de parámetros para un procedimiento
      (param-decl (type-exp identifier) param-exp)
-
      ; Definición de funciones (procedimientos)
      (proc-decl ("proc" identifier "=" "function" "(" (separated-list param-decl ",") ")" "{" (arbno expression ";") "}") proc-exp)
-
      ; Expresiones de operación sobre funciones
      (expression (identifier "(" (separated-list expression ",") ")") func-call-exp)
-
      ; Declaración de variables para el bloque GLOBALS
      (var-decl (type-exp identifier "=" expression) var-exp)                 ; Mutable
      (var-decl ("const" type-exp identifier "=" expression) const-exp)       ; Inmutable
-     
      ; Declaración de listas para el bloque GLOBALS 
      (expr-lista ("list" "<" type-exp ">" identifier "=" "(" (arbno expression ",") ")") simple-exp-lista) 
      (var-decl (expr-lista) lista-exp)
-
      ; Operaciones sobre listas
      (unary-primitive-list ("empty?") is-null-primitive-list)
      (unary-primitive-list ("empty") null-primitive-list)
@@ -83,15 +74,12 @@ Enlace al repositorio: https://github.com/bcuj2/proyecto_fusionLang.git
      (unary-primitive-list ("head") car-primitive-list)
      (unary-primitive-list ("tail") cdr-primitive-list)
      (list-primitive ("append") append-primitive)
-
      ; Expresiones de operación sobre listas
      (expression (unary-primitive-list "(" expression ")") unary-primitive-list-exp) 
      (expression (list-primitive "(" identifier "," (separated-list expression ",") ")") list-primitive-exp)
-
      ; Declaración de vectores para el bloque GLOBALS
      (expr-vector ("vector" "<" type-exp ">" identifier "=" "[" (arbno expression ",") "]") simple-expr-vector) 
      (var-decl (expr-vector) vector-exp)
-
      ; Operaciones sobre vectores
      (unary-primitive-vector ("vector?") is-vector-primitive)
      (expression ("make-vector" "(" expression "," expression ")") make-vector-expr) 
@@ -99,15 +87,12 @@ Enlace al repositorio: https://github.com/bcuj2/proyecto_fusionLang.git
      (vector-primitive ("set-vector") set-vector-primitive)
      (vector-primitive ("append-vector") append-vector-exp) 
      (vector-primitive ("delete-val-vector") delete-val-vector-exp) 
-
      ; Expresiones de operación sobre vectores
      (expression (unary-primitive-vector "(" expression ")") unary-primitive-vector-exp)
      (expression (vector-primitive "(" identifier "," (separated-list expression ",") ")") vector-primitive-exp)
-
      ; Declaración de diccionarios para el bloque GLOBALS
      (expr-dict ("dict" "<" type-exp "," type-exp ">" identifier "=" "{" (arbno expression ":" expression ",") "}") simple-expr-dict)
      (var-decl (expr-dict) dict-exp)
-
      ; Operaciones sobre diccionarios
      (unary-primitive-dict ("dict?") is-dict-primitive) 
      (expression ("make-dict" "{" (separated-list expression ":" expression ",") "}") make-dict-expr) 
@@ -116,11 +101,9 @@ Enlace al repositorio: https://github.com/bcuj2/proyecto_fusionLang.git
      (dict-primitive ("append-dict") append-dict-exp)  
      (dict-primitive ("keys-dict") keys-dict-exp) 
      (dict-primitive ("values-dict") values-dict-exp) 
-
      ; Expresión de operación sobre diccionarios
      (expression (unary-primitive-dict "(" expression ")") unary-primitive-dict-exp)  
      (expression (dict-primitive "(" identifier "," (separated-list expression ":" expression ",") ")") dict-primitive-exp) 
-
      ; Operaciones aritméticas
      (primitive ("+") prim-suma)
      (primitive ("-") prim-resta)
@@ -128,7 +111,6 @@ Enlace al repositorio: https://github.com/bcuj2/proyecto_fusionLang.git
      (primitive ("/") prim-div)
      (primitive ("concat") prim-concat)
      (primitive ("length") primitiva-longitud)
-
      ; Operaciones lógicas
      (primitive ("<") menor-exp)
      (primitive (">") mayor-exp)
@@ -136,26 +118,22 @@ Enlace al repositorio: https://github.com/bcuj2/proyecto_fusionLang.git
      (primitive (">=") mayorIgual-exp)
      (primitive ("==") igual-exp)
      (primitive ("!=") diferente-exp)
-
      ; Operación de asignación
-     (primitive ("->") asignar-valor)
-     (expresion (identifier "->" expression) asignar-exp)
-
+     ;(primitive ("->") asignar-valor)
+     ;(expresion (identifier "->" expression) asignar-exp)
      ; Condicional - if
      (expression ("if" expression "then" expression "else" expression) if-exp)
-     
      ; Ciclos - for/while
      (expression ("while" "(" expression ")" "{" (arbno expression ";") "}") while-exp)
      (expression ("for" "(" identifier "->" expression ";" expression ";" identifier "->" expression ")" "{" (arbno expression ";") "}") for-exp)
-     
      ; Estructura de control switch
      (expression ("switch" "(" expression ")" "{" (arbno "case" expression ":" (arbno expression ";") ";") "default" ":" (arbno expression ";") "}") switch-exp)
-
      ; Secuenciación - BLOCK
      (expression ("BLOCK" "{" (arbno expression ";") "}") block-exp)
-
      ; Definición para la secuencia LOCALS
      (expression ("LOCALS" "{" (arbno var-decl ";") "}" "{" (arbno expression ";") "}") locals-exp)
+     ; Imprimir
+     (expression ("imprimir" "(" expression ")") imprimir-exp)
      
      ; Tipos de datos
      (type-exp ("int") int-type-exp)
@@ -188,410 +166,282 @@ Enlace al repositorio: https://github.com/bcuj2/proyecto_fusionLang.git
       grammar-simple-interpreter)))
 
 
-;*************************************INTERPRETE*****************************************************
+;Funciones auxiliares--------------------------------------------------------------------------------------
 
-;Función que evalúa un programa teniendo en cuenta un ambiente dado (se inicializa dentro del programa)
-(define eval-program
-  (lambda (pgm)
-    (cases program pgm
-     (a-program (body)
-                (eval-expression body (init-env))))))
+;Evaluar una lista de expresiones(operandos) en un ambiente
+(define eval-rands
+  (lambda (exps env)
+    (map
+      (lambda (exp) (eval-expression exp env))
+      exps)))
 
+;Evaluar primitivas
+(define apply-primitive
+  (lambda (prim args)
+    (cases primitive prim
+      ; Operaciones aritméticas
+      (prim-suma () (+ (car args) (cadr args)))
+      (prim-resta () (- (car args) (cadr args)))
+      (prim-multi () (* (car args) (cadr args)))
+      (prim-div () (/ (car args) (cadr args)))
+      (prim-concat () (string-append (car args) (cadr args)))
+      (primitiva-longitud () (string-length (car args)))
+      ; Operaciones lógicas
+      (menor-exp () (if (< (car args) (cadr args)) 1 0))
+      (mayor-exp () (if (> (car args) (cadr args)) 1 0))
+      (menorIgual-exp () (if (<= (car args) (cadr args)) 1 0))
+      (mayorIgual-exp () (if (>= (car args) (cadr args)) 1 0))
+      (igual-exp () (if (= (car args) (cadr args)) 1 0))
+      (diferente-exp () (if (not (= (car args) (cadr args))) 1 0))
+      ;Falta operación de asignación
+      )))
 
-;Ambiente inicial
-(define init-env
-  (lambda ()
-    (extend-env
-     '(@xn @yn @zn @d @e)
-     '("an" "bn" "cn" 4 "FLP")
-     (empty-env))))
+;Aplicar operadores primitivos sobre listas
+(define apply-unary-primitive-list
+  (lambda (un-prim arg)
+    (cases unary-primitive-list un-prim
+      ;; Caso: el operador primitivo unario es empty?
+      (is-null-primitive-list ()
+        (cases lista arg
+          ;; Si el argumento es una lista vacía, devuelve #t, de lo contrario, devuelve #f
+          (lista-vacia () #t)
+          (else #f)
+        )
+      )
+      ;; Caso: el operador primitivo unario es empty (lista vacía) (null-primitive-list)
+      (null-primitive-list () lista-vacia)
+      ;; Caso: el operador primitivo unario es list? (is-lista-primitive)
+      (is-list-primitive () (list? arg))
+      ;; Caso: el operador primitivo unario es car (head)
+      (car-primitive-list () 
+        (cases lista arg
+          ;; Si la lista es vacía, se genera un error de índice fuera de rango
+          (lista-vacia () (eopl:error 'apply-unary-primitive-list
+                            "List index out of range"))
+          ;; Si la lista es extendida, devuelve el primer elemento
+          (lista-extendida (vals) (vector-ref vals 0))
+        )
+      )
+      ;; Caso: el operador primitivo unario es cdr (tail)
+      (cdr-primitive-list () 
+        (cases lista arg
+          ;; Si la lista es vacía, se genera un error de índice fuera de rango
+          (lista-vacia () (eopl:error 'apply-unary-primitive-list
+                            "List index out of range"))
+          ;; Si la lista es extendida, devuelve la lista sin el primer elemento
+          (lista-extendida (vals) 
+            (letrec ((vals-l (vector->list vals))
+                     (cdr-vals-l (cdr vals-l)))
+              (if (null? cdr-vals-l)
+                  lista-vacia
+                  (lista-extendida (list->vector cdr-vals-l))))))))))
 
+(define apply-list-primitive
+  (lambda (l-prim list-ref rands)
+    ; Obtener la lista y el valor del entorno
+    (let ((l (deref list-ref))
+          (val (car rands)))
+      ; Realizar el patrón de casos para la primitiva de concatenación de listas (append)
+      (cases list-primitive l-prim
+        ;; Caso para la primitiva de concatenación de listas (append)
+        (append-primitive ()
+          (let ((new-list 
+                 (cases lista l
+                   ;; Si la lista es vacía, crea una nueva lista con el valor
+                   (lista-vacia () (lista-extendida (vector val)))
+                   ;; Si la lista es extendida, concatena el valor al final de la lista
+                   (lista-extendida (vals) 
+                     (letrec ((vals-l (vector->list vals))
+                              (new-vals (append vals-l (list val))))
+                       (lista-extendida (list->vector new-vals)))))))
+            ;; Actualizar la referencia de la lista con la nueva lista concatenada
+            (setref! list-ref new-list)))))))
 
-;; Función de evaluación general para expresiones
-(define eval-expression1
-  (lambda (exp env)
-    (cond
-      ((boolean? exp) exp)  ; Si la expresión es un booleano, simplemente devuelve su valor
-      ((number? exp) exp)   ; Si la expresión es un número, simplemente devuelve su valor
-      (else (eopl:error "Expresión no reconocida")))))  ; Maneja otros tipos de expresiones
+;Aplicar operadores primitivos sobre vectores
+(define apply-unary-primitive-vector
+  (lambda (un-prim arg)
+    (cases unary-primitive-vector un-prim
+      ;; Caso: el operador primitivo unario es vector? (comprobar si es un vector)
+      (is-vector-primitive ()
+        (vector? arg)))))  ;; Devuelve #t si el argumento es un vector, #f si no lo es
 
-
-(define eval-if
-  (lambda (cond-exp then-exp else-exp env)
-    (let ((cond-val (eval-expression1 cond-exp env)))
-      (if (not (boolean? cond-val))
-          (eopl:error "La condición de if debe ser un booleano.")
-          (if cond-val
-              (eval-expression1 then-exp env)
-              (eval-expression1 else-exp env))))))
-
-
-;; Función que evalúa el ciclo while con chequeo de tipo
-(define eval-while
-  (lambda (test-exp body env)
-    (let ((test-val (eval-expression1 test-exp env)))
-      (if (not (boolean? test-val))
-          (eopl:error "La condición en while debe ser un booleano.")
-          (if test-val
-              (begin
-                (eval-expression1 body env)
-                (eval-while test-exp body env))  ; Recursión de cola
-              'done)))))
-
-
-;; Función que evalúa el ciclo for con chequeo de tipo
-(define eval-for
-  (lambda (init-exp cond-exp update-exp body-exp env)
-    ;; Evaluar la inicialización (identifier -> expression)
-    (eval-expression1 init-exp env)
-    
-    ;; Evaluar la condición de la expresión (expresión booleana)
-    (let loop ((test-val (eval-expression1 cond-exp env)))
-      (if (not (boolean? test-val))
-          (eopl:error "La condición en el ciclo for debe ser un booleano.")
-          (if test-val
-              (begin
-                ;; Evaluar el cuerpo del ciclo (se evalúan todas las expresiones del cuerpo)
-                (for-each (lambda (exp) (eval-expression1 exp env)) body-exp)
-                
-                ;; Evaluar la actualización
-                (eval-expression1 update-exp env)
-                
-                ;; Recursión para continuar el ciclo
-                (loop (eval-expression1 cond-exp env)))
-              'done)))))
-
-
-
-
-(define eval-switch
-  (lambda (exp env cases default-exp)
-    (define test-val (eval-expression1 exp env))
-    
-    (define eval-case
-      (lambda (case-val case-exp)
-        (if (equal? test-val case-val)
-            (eval-expression1 case-exp env)
-            #f)))
-    
-    (define case-results
-      (map (lambda (case)
-             (eval-case (car case) (cdr case))) cases))
-    
-    (if (memv #f case-results)
-        (eval-expression1 default-exp env)
-        'done)))
-
-
-(define (make-list-exp type elements)
-  (if (not (list? elements))
-      (eopl:error "Se esperaba una lista como argumento para make-list.")
-      (list 'make-list type elements)))
-
-
-;; Verifica si una lista está vacía
-(define eval-empty? 
-  (lambda (list-exp env)
-    (let ((list-val (eval-expression1 list-exp env)))
-      (if (not (list? list-val))
-          (eopl:error "Se esperaba una lista.")
-          (null? list-val)))))
-
-;; Devuelve el primer elemento de la lista
-(define eval-head
-  (lambda (list-exp env)
-    (let ((list-val (eval-expression1 list-exp env)))
-      (if (not (list? list-val))
-          (eopl:error "Se esperaba una lista.")
-          (if (null? list-val)
-              (eopl:error "La lista está vacía.")
-              (car list-val))))))
-
-
-;; Devuelve el resto de la lista (todos los elementos excepto el primero)
-(define eval-tail
-  (lambda (list-exp env)
-    (let ((list-val (eval-expression1 list-exp env)))
-      (if (not (list? list-val))
-          (eopl:error "Se esperaba una lista.")
-          (if (null? list-val)
-              (eopl:error "La lista está vacía.")
-              (cdr list-val))))))
-
-;; Crea una lista con los elementos dados
-(define eval-make-list
-  (lambda (type-exp list-exp env)
-    (let ((list-val (eval-expression1 list-exp env)))
-      (if (not (list? list-val))
-          (eopl:error "Se esperaba una lista.")
-          (list 'make-list type-exp list-val)))))
-
-;; Operación append de listas
-(define eval-append-list
-  (lambda (list1-exp list2-exp env)
-    (let ((list1-val (eval-expression1 list1-exp env))
-          (list2-val (eval-expression1 list2-exp env)))
-      (if (not (list? list1-val)) 
-          (eopl:error "El primer argumento no es una lista.")
-          (if (not (list? list2-val)) 
-              (eopl:error "El segundo argumento no es una lista.")
-              (append list1-val list2-val))))))
-
-
-;; Refere a un elemento del vector en el índice dado
-(define eval-ref-vector
-  (lambda (vector-exp index-exp env)
-    (let ((vector-val (eval-expression1 vector-exp env))
-          (index-val (eval-expression1 index-exp env)))
-      (if (not (vector? vector-val))
-          (eopl:error "Se esperaba un vector.")
-          (if (not (integer? index-val))
-              (eopl:error "El índice debe ser un número entero.")
-              (vector-ref vector-val index-val))))))
-
-
-;; Modifica el valor en el índice dado
-(define eval-set-vector
-  (lambda (vector-exp index-exp value-exp env)
-    (let ((vector-val (eval-expression1 vector-exp env))
-          (index-val (eval-expression1 index-exp env))
-          (value-val (eval-expression1 value-exp env)))
-      (if (not (vector? vector-val))
-          (eopl:error "Se esperaba un vector.")
-          (if (not (integer? index-val))
-              (eopl:error "El índice debe ser un número entero.")
-              (begin
-                (vector-set! vector-val index-val value-val)
-                vector-val))))))
-
-;; Crea un vector con los elementos dados
-(define eval-make-vector
-  (lambda (size-exp value-exp env)
-    (let ((size-val (eval-expression1 size-exp env))
-          (value-val (eval-expression1 value-exp env)))
-      (if (not (integer? size-val))
-          (eopl:error "El tamaño debe ser un número entero.")
-          (make-vector size-val value-val)))))
-
-
-
-
-;; Evaluar operaciones aritméticas
-(define eval-prim-arithmetic
-  (lambda (operator exp1 exp2 env)
-    (let ((val1 (eval-expression1 exp1 env))
-          (val2 (eval-expression1 exp2 env)))
+(define apply-vector-primitive
+  (lambda (v-prim vec-ref rands)
+    ; Obtener el vector y el valor del entorno
+    (let ((v (deref vec-ref))
+          (val (car rands)))  ;; Tomar el primer valor de los operandos (rands)
       (cond
-        ((eq? operator '+) (+ val1 val2))
-        ((eq? operator '-) (- val1 val2))
-        ((eq? operator '*) (* val1 val2))
-        ((eq? operator '/) (/ val1 val2))
-        (else (eopl:error "Operador aritmético no reconocido"))))))
+        ;; Caso: ref-vector (acceso a un elemento en el vector)
+        [(equal? v-prim 'ref-vector) 
+         (vector-ref v val)]  ;; Devuelve el valor en la posición 'val' del vector
 
-;; Evaluar operaciones lógicas
-(define eval-prim-logical
-  (lambda (operator exp1 exp2 env)
-    (let ((val1 (eval-expression1 exp1 env))
-          (val2 (eval-expression1 exp2 env)))
+        ;; Caso: set-vector (modificar un elemento en el vector)
+        [(equal? v-prim 'set-vector) 
+         (vector-set! v val (car (cdr rands)))  ;; Modifica el elemento en la posición 'val'
+         v]  ;; Retorna el vector actualizado
+
+        ;; Caso: append-vector (agregar un valor al final del vector)
+        [(equal? v-prim 'append-vector) 
+         (let ((new-v (list->vector (append (vector->list v) (list (car rands))))))  ;; Convierte el vector a lista, agrega el valor, y convierte de vuelta a vector
+           new-v)]  ;; Devuelve el nuevo vector con el valor agregado
+
+        ;; Caso: delete-val-vector (eliminar un valor específico del vector) FALTA ESTE CASO
+        ))))
+
+;Aplicar operadores primitivos sobre diccionarios
+(define apply-unary-primitive-dict
+  (lambda (un-prim arg)
+    (cases unary-primitive-dict un-prim
+      ;; Caso: el operador primitivo unario es dict? (comprobar si es un diccionario)
+      (is-dict-primitive ()
+        (dict? arg)))))  ;; Devuelve #t si el argumento es un diccionario, #f si no lo es
+
+;; Funciones auxiliares para el manejo de diccionarios
+
+;; Busca un valor en el diccionario usando la clave
+(define (dict-ref dict key)
+  (cond
+    [(null? dict) #f]  ;; Si el diccionario está vacío, retorna #f
+    [(equal? (car (car dict)) key) (cdr (car dict))]  ;; Si la clave coincide, retorna el valor
+    [else (dict-ref (cdr dict) key)]))  ;; Busca en el resto del diccionario
+
+;; Modifica o agrega una nueva entrada en el diccionario
+(define (dict-set! dict key value)
+  (cond
+    [(null? dict) (list (list key value))]  ;; Si el diccionario está vacío, crea una nueva entrada
+    [(equal? (car (car dict)) key) (list (list key value) (cdr dict))]  ;; Si la clave ya existe, modifica el valor
+    [else (cons (car dict) (dict-set! (cdr dict) key value))]))  ;; Si no, sigue buscando y agrega la clave-valor al final
+
+;; Agrega una nueva pareja clave-valor al diccionario
+(define (dict-pair dict key value)
+  (cons (list key value) dict))  ;; Agrega la nueva pareja al diccionario
+
+;; Devuelve una lista con todas las claves del diccionario
+(define (dict-keys dict)
+  (map car dict))  ;; Devuelve una lista de todas las claves
+
+;; Devuelve una lista con todos los valores del diccionario
+(define (dict-values dict)
+  (map cadr dict))  ;; Devuelve una lista de todos los valores
+
+;; Función principal para aplicar las primitivas del diccionario
+(define apply-dict-primitive
+  (lambda (d-prim dict-ref rands)
+    ; Obtener el diccionario y los valores del entorno
+    (let ((d (deref dict-ref))
+          (key (car rands))  ;; Tomar el primer valor de los operandos (clave)
+          (val (car (cdr rands))))  ;; Tomar el valor asociado para algunos casos
       (cond
-        ((eq? operator '==) (if (= val1 val2) #t #f))
-        ((eq? operator '!=) (if (not (= val1 val2)) #t #f))
-        ((eq? operator '<) (if (< val1 val2) #t #f))
-        ((eq? operator '> ) (if (> val1 val2) #t #f))
-        ((eq? operator '<=) (if (<= val1 val2) #t #f))
-        ((eq? operator '>=) (if (>= val1 val2) #t #f))
-        (else (eopl:error "Operador lógico no reconocido"))))))
+        ;; Caso: ref-dict (acceso a un valor en el diccionario)
+        [(equal? d-prim 'ref-dict) 
+         (dict-ref d key)]  ;; Devuelve el valor asociado con la clave 'key' del diccionario
+
+        ;; Caso: set-dict (modificar un valor en el diccionario)
+        [(equal? d-prim 'set-dict) 
+         (dict-set! d key val)  ;; Modifica el valor para la clave 'key'
+         d]  ;; Retorna el diccionario actualizado
+
+        ;; Caso: append-dict (agregar una nueva pareja clave-valor)
+        [(equal? d-prim 'append-dict) 
+         (dict-pair d key val)]  ;; Agrega la nueva pareja clave-valor al diccionario
+
+        ;; Caso: keys-dict (obtener todas las claves del diccionario)
+        [(equal? d-prim 'keys-dict) 
+         (dict-keys d)]  ;; Devuelve todas las claves del diccionario
+
+        ;; Caso: values-dict (obtener todos los valores del diccionario)
+        [(equal? d-prim 'values-dict) 
+         (dict-values d)]  ;; Devuelve todos los valores del diccionario
+      ))))
 
 
 
-; Definición del entorno para variables y funciones
-(define empty-env '())  ; El entorno vacío
-(define extend-env (lambda (var val env) (cons (cons var val) env)))  ; Extiende el entorno
-(define lookup-env (lambda (var env) 
-                     (cond ((null? env) (eopl:error "Variable no encontrada"))
-                           ((eq? var (car (car env))) (cdr (car env)))
-                           (else (lookup-env var (cdr env))))))
 
-; Función para mostrar el entorno (útil para depuración)
-(define show-env
-  (lambda (env)
-    (if (null? env)
-        '()
-        (cons (car (car env)) (show-env (cdr env))))))
 
-; Evaluación general para expresiones
+
+
+
+
+
+
+
+;Referencias --------------------------------------------------------------------------------------------
+(define-datatype reference reference?
+  ;; Definición de la variante a-ref que representa una referencia
+  (a-ref
+    (position integer?)   ; Campo position debe ser un entero
+    (vec vector?))         ; Campo vec debe ser un vector
+
+  ;; Definición de la variante a-const que representa una constante
+  (a-const
+    (position integer?)   ; Campo position debe ser un entero
+    (vec vector?)))        ; Campo vec debe ser un vector
+
+
+(define deref
+  (lambda (ref)
+    ; Utiliza el formulario 'cases' para realizar coincidencias de patrones en el tipo de referencia.
+    (cases reference ref
+      ; Si es una referencia a un elemento en un vector ('a-ref'),
+      ; accede al vector en la posición 'pos' y devuelve el elemento en esa posición.
+      (a-ref (pos vec)
+             (vector-ref vec pos))
+      ; Si es una referencia a una constante en un vector ('a-const'),
+      ; accede al vector en la posición 'pos' y devuelve la constante en esa posición.
+      (a-const (pos vec)
+               (vector-ref vec pos)))))
+
+(define setref! 
+  (lambda (ref val)
+    ; Casos para el patrón de referencia
+    (cases reference ref
+      ; Si es una referencia a un elemento mutable (a-ref)
+      (a-ref (pos vec)
+        ; Modificar el vector en la posición especificada con el nuevo valor
+        (vector-set! vec pos val))
+      ; Si es una referencia a una constante (a-const)
+      (a-const (pos vec)
+        ; Generar un error, ya que no se puede cambiar el valor de una constante
+        (eopl:error 'setref! "No es posible cambiar el valor de una constante")))
+    ; Devuelve 1 (puede ser un valor arbitrario, dependiendo del contexto)
+    1))
+
+
+;El interpretador ------------------------------------------------------------------------------------------
+
 (define eval-expression
   (lambda (exp env)
-    (cond
-      ((boolean? exp) exp)
-      ((number? exp) exp)
-      ((string? exp) exp)
-      ((symbol? exp) (lookup-env exp env))
-      ((pair? exp) (eval-special-form exp env))
-      (else (eopl:error "Expresión no reconocida")))))
-
-; Evaluación de expresiones especiales (condicionales, ciclos, funciones, etc.)
-
-(define eval-special-form
-  (lambda (exp env)
-    (cond
-      ((eq? (car exp) 'if) (eval-if (cadr exp) (caddr exp) (cadddr exp) env))
-      ((eq? (car exp) 'while) (eval-while (cadr exp) (caddr exp) env))
-      ((eq? (car exp) 'for)
- (eval-for (cadr exp) (caddr exp) (cadddr exp) (cadddr (cdr (cdr (cdr exp)))) env))  ; Corrige esto
-  ; Corrige esto
-      ((eq? (car exp) 'proc) (eval-proc-decl (cadr exp) (caddr exp) (cadddr exp) env))
-      ((eq? (car exp) 'call) (eval-proc-call (cadr exp) (cdr exp) env))
-      ((eq? (car exp) 'make-list) (eval-make-list (cadr exp) (caddr exp) env))
-      ((eq? (car exp) 'make-vector) (eval-make-vector (cadr exp) (caddr exp) env))
-      ((eq? (car exp) 'make-dict) (eval-make-dict (cadr exp) (caddr exp) env))
-      (else (eopl:error "Forma especial no reconocida")))))
+    (cases expression exp
+      (lit-exp (datum) datum)
+       ;AÑADIR TODOS L
+      )))
 
 
-; Evaluación de la declaración de procedimiento
-(define eval-proc-decl
-  (lambda (name params body exp env)
-    (define proc
-      (lambda args
-        (let ((new-env (extend-env params args env)))
-          (eval-expression body new-env))))
-    (extend-env name proc env)))  ; Aquí estaba el problema, ya está separado
+;Datatypes ---------------------------------------------------------------------------------------------
+;; Definición del tipo de datos lista
+(define-datatype lista lista?
+  ;; Constructor: lista-vacia
+  (lista-vacia)
+  
+  ;; Constructor: lista-extendida
+  (lista-extendida
+    ;; Argumento del constructor: vals (un vector)
+    (vals vector?)
+  )
+)
+
+(define-datatype dic dict?
+  ;; Constructor: lista-vacia
+  (dict-vacio)
+)
 
 
-; Evaluación de llamada a procedimiento
-(define eval-proc-call
-  (lambda (name args exp env)
-    (define proc (lookup-env name env))
-    (let ((arg-values (map (lambda (arg) (eval-expression arg env)) args)))
-      (apply proc arg-values))))
+;Ambientes --------------------------------------------------------------------------------------------
 
-; Evaluación de la creación de diccionarios
-(define make-dict
-  (lambda ()
-    '()))  ; Devuelve una lista vacía como diccionario
+(define extend-env
+  (lambda (syms vals env)
+    ; Se utiliza extended-env-record para construir el nuevo entorno.
+    ; extended-env-record debe ser definido en otra parte del código.
+    (extended-env-record syms (list->vector vals) env)))
 
-(define add-to-dict
-  (lambda (dict key value)
-    (cons (cons key value) dict)))  ; Añade un par clave-valor al diccionario
-
-(define lookup-in-dict
-  (lambda (dict key)
-    (define lookup-helper
-      (lambda (lst)
-        (cond ((null? lst) (eopl:error "Clave no encontrada"))
-              ((= (car (car lst)) key) (cdr (car lst)))
-              (else (lookup-helper (cdr lst))))))
-    (lookup-helper dict)))  ; Busca un valor dado una clave
-
-(define eval-make-dict
-  (lambda (key-exp value-exp env)
-    (let ((key-val (eval-expression key-exp env))
-          (value-val (eval-expression value-exp env)))
-      (if (not (symbol? key-val))
-          (eopl:error "Las claves deben ser símbolos.")
-          (add-to-dict (make-dict) key-val value-val)))))  ; Crea el diccionario y añade el par clave-valor
-
-; Función para manejar el flujo de control de break y continue
-(define eval-control-flow
-  (lambda (exp env)
-    (cond ((eq? (car exp) 'break) 'break)
-          ((eq? (car exp) 'continue) 'continue)
-          (else (eval-expression exp env)))))
-
-
-(define foldl
-  (lambda (f base lst)
-    (if (null? lst)
-        base
-        (foldl f (f (car lst) base) (cdr lst)))))  ; Recursión sobre la lista
-
-
-; Ejecuta una lista de expresiones en secuencia
-(define eval-block
-  (lambda (exp-list env)
-    (foldl (lambda (exp acc)
-             (if (eq? acc 'break)
-                 'break
-                 (let ((result (eval-expression exp env)))
-                   (if (eq? result 'continue) result 'done))))
-           'done exp-list)))
-
-
-; Implementación de grafos dirigidos y primitivas adicionales para FusionLang
-
-; Primitivas para manejo de grafos dirigidos
-(define make-graph
-  (lambda (vertices edges)
-    (list 'graph vertices edges)))
-
-(define graph-vertices
-  (lambda (graph)
-    (if (eq? (car graph) 'graph)
-        (cadr graph)
-        (eopl:error "Se esperaba un grafo"))))
-
-(define graph-edges
-  (lambda (graph)
-    (if (eq? (car graph) 'graph)
-        (caddr graph)
-        (eopl:error "Se esperaba un grafo"))))
-
-(define graph-add-edge
-  (lambda (graph edge)
-    (if (eq? (car graph) 'graph)
-        (let* ((vertices (cadr graph))
-               (edges (caddr graph))
-               (new-vertices (foldl (lambda (v acc)
-                                      (if (member v vertices)
-                                          acc
-                                          (cons v acc)))
-                                    vertices edge)))
-          (list 'graph new-vertices (cons edge edges)))
-        (eopl:error "Se esperaba un grafo"))))
-
-
-(define filter
-  (lambda (pred lst)
-    (if (null? lst)
-        '()
-        (if (pred (car lst))
-            (cons (car lst) (filter pred (cdr lst)))
-            (filter pred (cdr lst))))))
-
-
-; Primitivas de operación de vecinos
-(define graph-neighbors-out
-  (lambda (graph vertex)
-    (if (eq? (car graph) 'graph)
-        (let ((edges (caddr graph)))
-          (filter (lambda (e) (eq? (car e) vertex)) edges))
-        (eopl:error "Se esperaba un grafo"))))
-
-(define graph-neighbors-in
-  (lambda (graph vertex)
-    (if (eq? (car graph) 'graph)
-        (let ((edges (caddr graph)))
-          (filter (lambda (e) (eq? (cadr e) vertex)) edges))
-        (eopl:error "Se esperaba un grafo"))))
-
-; Primitivas adicionales para diccionarios
-(define eval-keys-dict
-  (lambda (dict env)
-    (if (list? dict)
-        (map car dict)
-        (eopl:error "Se esperaba un diccionario"))))
-
-(define eval-values-dict
-  (lambda (dict env)
-    (if (list? dict)
-        (map cdr dict)
-        (eopl:error "Se esperaba un diccionario"))))
-
-(define eval-append-dict
-  (lambda (dict key value env)
-    (if (list? dict)
-        (if (lookup-in-dict dict key)
-            (eopl:error "La clave ya existe en el diccionario")
-            (cons (cons key value) dict))
-        (eopl:error "Se esperaba un diccionario"))))
 ;(interpretador)
